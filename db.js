@@ -1,39 +1,30 @@
-const initSqlJs = require('sql.js');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
 
-const dbDir = path.join(__dirname, 'data');
-const dbPath = path.join(dbDir, 'fixit.db');
+const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-
-let db = null;
+let pool = null;
 
 async function initDatabase() {
-  const SQL = await initSqlJs();
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL && DATABASE_URL.includes('railway.internal') ? false : { rejectUnauthorized: false }
+  });
 
-  if (fs.existsSync(dbPath)) {
-    const buffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(buffer);
-  } else {
-    db = new SQL.Database();
-  }
-
-  db.run(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL CHECK(role IN ('operator', 'maintenance', 'supervisor')),
-      created_at TEXT DEFAULT (datetime('now', 'localtime'))
+      created_at TIMESTAMP DEFAULT NOW()
     )
   `);
 
-  db.run(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       ticket_code TEXT UNIQUE NOT NULL,
       reporter_name TEXT NOT NULL,
       line_area TEXT NOT NULL,
@@ -43,79 +34,62 @@ async function initDatabase() {
       status TEXT NOT NULL DEFAULT 'Open' CHECK(status IN ('Open', 'In Progress', 'Closed')),
       technician TEXT DEFAULT '-',
       action_note TEXT DEFAULT '-',
-      created_at TEXT DEFAULT (datetime('now', 'localtime')),
-      updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
     )
   `);
 
-  db.run(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS notifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      report_id INTEGER,
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      report_id INTEGER REFERENCES reports(id),
       type TEXT NOT NULL CHECK(type IN ('new_report', 'status_update', 'mention')),
       title TEXT NOT NULL,
       message TEXT NOT NULL,
-      is_read INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now', 'localtime')),
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (report_id) REFERENCES reports(id)
+      is_read BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW()
     )
   `);
 
-  seedDefaultUsers();
-  save();
-  return db;
+  await seedDefaultUsers();
+  return pool;
 }
 
-function save() {
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(dbPath, buffer);
-}
-
-function seedDefaultUsers() {
-  const result = db.exec('SELECT COUNT(*) as c FROM users');
-  const count = result[0]?.values[0][0] || 0;
+async function seedDefaultUsers() {
+  const result = await pool.query('SELECT COUNT(*) as count FROM users');
+  const count = parseInt(result.rows[0].count);
 
   if (count === 0) {
     const hash = bcrypt.hashSync('admin123', 10);
-    db.run('INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)', ['admin', hash, 'Administrator', 'supervisor']);
+    await pool.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['admin', hash, 'Administrator', 'supervisor']);
 
     const opHash = bcrypt.hashSync('operator123', 10);
-    db.run('INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)', ['operator', opHash, 'Operator Lini', 'operator']);
+    await pool.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['operator', opHash, 'Operator Lini', 'operator']);
 
     const mtHash = bcrypt.hashSync('maintenance123', 10);
-    db.run('INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)', ['maintenance', mtHash, 'Teknisi Maintenance', 'maintenance']);
+    await pool.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['maintenance', mtHash, 'Teknisi Maintenance', 'maintenance']);
 
     console.log('Default users created (admin/admin123, operator/operator123, maintenance/maintenance123)');
   }
 }
 
-// Helper: run query and return array of objects
-function queryAll(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const results = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return results;
+async function queryAll(sql, params = []) {
+  const result = await pool.query(sql, params);
+  return result.rows;
 }
 
-// Helper: run query and return single object
-function queryOne(sql, params = []) {
-  const results = queryAll(sql, params);
-  return results[0] || null;
+async function queryOne(sql, params = []) {
+  const result = await pool.query(sql, params);
+  return result.rows[0] || null;
 }
 
-// Helper: run statement (INSERT, UPDATE, DELETE)
-function execute(sql, params = []) {
-  db.run(sql, params);
-  const lastId = db.exec('SELECT last_insert_rowid()')[0]?.values[0][0];
-  save();
+async function execute(sql, params = []) {
+  const result = await pool.query(sql, params);
+  const lastId = result.rows && result.rows[0] && result.rows[0].id
+    ? result.rows[0].id
+    : (result.rows && result.rows[0] && result.rows[0].lastval) || null;
   return { lastInsertRowid: lastId };
 }
 
-module.exports = { initDatabase, queryAll, queryOne, execute, save };
+module.exports = { initDatabase, queryAll, queryOne, execute };

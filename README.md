@@ -24,25 +24,31 @@ Tatalogam Lestari membantu tim pabrik mengelola laporan kerusakan mesin secara d
 | Layer | Teknologi |
 |-------|-----------|
 | Backend | Node.js + Express |
-| Database | SQLite (sql.js — pure JavaScript, tanpa native dependencies) |
+| Database | PostgreSQL (production) / SQLite (development) |
 | Autentikasi | JWT (bcryptjs + jsonwebtoken) |
 | Frontend | Tailwind CSS + Chart.js + FontAwesome |
+| PWA | Service Worker + Web App Manifest |
 
 ## 📦 Instalasi
 
 ### Prasyarat
 
 - [Node.js](https://nodejs.org/) versi 18 atau lebih baru
+- PostgreSQL 14+ (untuk production)
 
 ### Langkah Instalasi
 
 ```bash
 # Clone repository
-git clone https://github.com/username/fixit-maintenance.git
+git clone https://github.com/rezabudiawanrzky/fixit-maintenance.git
 cd fixit-maintenance
 
 # Install dependencies
 npm install
+
+# Copy environment file dan sesuaikan
+cp .env.example .env
+# Edit .env dengan DATABASE_URL dan JWT_SECRET Anda
 
 # Jalankan server
 npm start
@@ -142,8 +148,15 @@ fixit-maintenance/
 - Autentikasi menggunakan **JWT** dengan expiry 24 jam
 - Role-based access control di setiap endpoint API
 - Token dikirim via `Authorization: Bearer` header
+- **PENTING:** Ganti `JWT_SECRET` di environment variable dengan random string yang kuat
+- **PENTING:** Ganti password default segera setelah instalasi
 
-> **Catatan:** Untuk penggunaan production, ganti `JWT_SECRET` di `server.js` dengan random string yang kuat, atau gunakan environment variable.
+### Production Checklist
+- [ ] Ganti JWT_SECRET dengan random string (min 32 karakter)
+- [ ] Ganti semua password default
+- [ ] Gunakan PostgreSQL (bukan SQLite) untuk data persisten
+- [ ] Setup HTTPS (otomatis di Railway/Cloudflare)
+- [ ] Backup database secara berkala
 
 ## 🤝 Kontribusi
 
