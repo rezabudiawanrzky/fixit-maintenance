@@ -8,8 +8,24 @@ let pool = null;
 async function initDatabase() {
   pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: DATABASE_URL && DATABASE_URL.includes('railway.internal') ? false : { rejectUnauthorized: false }
+    ssl: DATABASE_URL && DATABASE_URL.includes('railway.internal') ? false : { rejectUnauthorized: false },
+    max: 5,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000
   });
+
+  const maxRetries = 10;
+  for (let i = 1; i <= maxRetries; i++) {
+    try {
+      await pool.query('SELECT 1');
+      console.log('Database connected successfully');
+      break;
+    } catch (err) {
+      console.log(`Database connection attempt ${i}/${maxRetries} failed: ${err.code || err.message}`);
+      if (i === maxRetries) throw err;
+      await new Promise(r => setTimeout(r, 5000));
+    }
+  }
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
