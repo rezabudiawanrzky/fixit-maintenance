@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tatalogam Lestari - Login</title>
+    <meta name="description" content="Sistem Pelaporan Kerusakan Mesin - Tatalogam Lestari">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FixIt">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-sky-100 via-blue-50 to-emerald-100 min-h-screen flex items-center justify-center relative overflow-hidden">
+    <!-- Watermark Background -->
+    <div class="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src="/images/logo.png" alt="" class="max-w-[600px] opacity-[0.07]">
+    </div>
+
+    <div class="w-full max-w-md px-4 relative z-10">
+        <div class="text-center mb-8">
+            <img src="/images/logo.png" alt="Tatalogam Lestari" class="mx-auto w-20 h-auto mb-3 drop-shadow-sm">
+            <h1 class="text-2xl font-bold text-slate-800">Tatalogam Lestari</h1>
+            <p class="text-slate-500 text-sm mt-1">System Maintenance Manufaktur</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-lg font-bold text-slate-800 mb-6">Masuk ke Akun Anda</h2>
+
+            <div id="errorMsg" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+                <i class="fa-solid fa-circle-exclamation mr-2"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="username" required placeholder="Masukkan username"
+                            class="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="password" id="password" required placeholder="Masukkan password"
+                            class="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <button type="submit" id="loginBtn"
+                    class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Masuk</span>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <p class="text-xs text-slate-500 text-center mb-3">Akun Default (Demo):</p>
+                <div class="grid grid-cols-3 gap-2 text-[10px]">
+                    <div class="bg-sky-50 rounded-lg p-2 text-center">
+                        <p class="font-bold text-slate-700">Supervisor</p>
+                        <p class="text-slate-500">admin / admin123</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-lg p-2 text-center">
+                        <p class="font-bold text-slate-700">Operator</p>
+                        <p class="text-slate-500">operator / operator123</p>
+                    </div>
+                    <div class="bg-teal-50 rounded-lg p-2 text-center">
+                        <p class="font-bold text-slate-700">Maintenance</p>
+                        <p class="text-slate-500">maintenance / maintenance123</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
+        }
+
+        if (localStorage.getItem('fixit_token')) {
+            window.location.href = '/';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memproses...</span>';
+            errorMsg.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                localStorage.setItem('fixit_token', data.token);
+                localStorage.setItem('fixit_user', JSON.stringify(data.user));
+                window.location.href = '/';
+            } catch (err) {
+                errorText.textContent = err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tatalogam Lestari - Dashboard Maintenance</title>
+    <meta name="description" content="Sistem Pelaporan Kerusakan Mesin - Tatalogam Lestari">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FixIt">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-sky-50 via-blue-50 to-emerald-50 text-slate-800 font-sans min-h-screen relative">
+    <!-- Watermark Background -->
+    <div class="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src="/images/logo.png" alt="" class="max-w-[700px] opacity-[0.05]">
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div id="installBanner" class="hidden bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-4 py-3 text-sm shadow-lg z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-download text-lg"></i>
+                <div>
+                    <p class="font-semibold">Install FixIt di HP Anda</p>
+                    <p class="text-[11px] text-emerald-100">Akses cepat seperti aplikasi native</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="installApp()" class="bg-white text-teal-700 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-50 transition">Install</button>
+                <button onclick="dismissInstall()" class="text-emerald-200 hover:text-white px-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-teal-700 to-emerald-700 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="/images/logo.png" alt="Tatalogam Lestari" class="w-10 h-auto bg-white rounded-lg p-0.5 shadow-sm">
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide leading-tight">Tatalogam Lestari</h1>
+                    <p class="text-[10px] text-emerald-200 uppercase tracking-wider">System Maintenance Manufaktur</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- Notification Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotifPanel()" class="relative p-2 rounded-lg hover:bg-teal-800 transition">
+                        <i class="fa-solid fa-bell text-lg"></i>
+                        <span id="notifBadge" class="hidden absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">0</span>
+                    </button>
+                    <!-- Notification Dropdown -->
+                    <div id="notifPanel" class="hidden absolute right-0 top-12 w-80 max-h-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+                        <div class="bg-slate-50 px-4 py-3 border-b flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-slate-700">Notifikasi</h3>
+                            <button onclick="markAllRead()" class="text-[10px] text-teal-600 hover:text-teal-800 font-semibold">Tandai semua dibaca</button>
+                        </div>
+                        <div id="notifList" class="overflow-y-auto max-h-72 divide-y divide-slate-100">
+                            <div class="px-4 py-6 text-center text-slate-400 text-xs">
+                                <i class="fa-solid fa-bell-slash text-2xl mb-2 block text-slate-300"></i>
+                                Memuat...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right hidden sm:block">
+                    <p id="headerUserName" class="text-sm font-semibold leading-tight"></p>
+                    <p id="headerUserRole" class="text-[10px] text-emerald-200 uppercase"></p>
+                </div>
+                <div id="headerAvatar" class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-sm font-bold"></div>
+                <button onclick="logout()" class="bg-teal-800 hover:bg-teal-900 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 transition">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Keluar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-1">
+            <button onclick="switchTab('dashboard')" data-tab="dashboard" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-teal-600 text-teal-700">
+                <i class="fa-solid fa-chart-line mr-1"></i> Dashboard
+            </button>
+            <button onclick="switchTab('reports')" data-tab="reports" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-teal-600">
+                <i class="fa-solid fa-list-check mr-1"></i> Tiket Perbaikan
+            </button>
+            <button onclick="switchTab('create')" data-tab="create" id="tabCreate" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-teal-600">
+                <i class="fa-solid fa-plus-circle mr-1"></i> Buat Laporan
+            </button>
+            <button onclick="switchTab('users')" data-tab="users" id="tabUsers" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-teal-600 hidden">
+                <i class="fa-solid fa-users-gear mr-1"></i> Kelola User
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 relative z-10">
+
+        <!-- TAB: Dashboard -->
+        <div id="tabContent-dashboard" class="tab-content space-y-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Total Laporan</p>
+                            <p id="statTotal" class="text-3xl font-bold text-slate-800 mt-1">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-clipboard-list text-slate-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-red-100 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Open</p>
+                            <p id="statOpen" class="text-3xl font-bold text-red-600 mt-1">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-amber-100 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">In Progress</p>
+                            <p id="statProgress" class="text-3xl font-bold text-amber-600 mt-1">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-wrench text-amber-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-emerald-100 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Selesai</p>
+                            <p id="statClosed" class="text-3xl font-bold text-emerald-600 mt-1">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-bar text-blue-500 mr-2"></i>Kerusakan per Area</h3>
+                    <div class="h-64"><canvas id="chartArea"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-pie text-amber-500 mr-2"></i>Distribusi Urgensi</h3>
+                    <div class="h-64"><canvas id="chartUrgency"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>Tren Laporan per Bulan</h3>
+                    <div class="h-64"><canvas id="chartMonthly"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Reports -->
+        <div id="tabContent-reports" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b pb-3">
+                    <h2 class="text-lg font-bold text-slate-800">Daftar Tiket Perbaikan</h2>
+                    <div class="flex flex-wrap gap-2">
+                        <input type="text" id="searchInput" onkeyup="loadReports()" placeholder="Cari mesin / pelapor..."
+                            class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                        <select id="filterStatus" onchange="loadReports()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none bg-white">
+                            <option value="">Semua Status</option>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        <select id="filterUrgency" onchange="loadReports()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none bg-white">
+                            <option value="">Semua Urgensi</option>
+                            <option value="Rendah">Rendah</option>
+                            <option value="Sedang">Sedang</option>
+                            <option value="Tinggi">Tinggi</option>
+                        </select>
+                        <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 transition">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase border-b">
+                            <tr>
+                                <th class="p-3">Kode / Tanggal</th>
+                                <th class="p-3">Mesin & Area</th>
+                                <th class="p-3">Urgensi</th>
+                                <th class="p-3">Masalah</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Teknisi</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="hidden text-center py-12">
+                    <i class="fa-solid fa-inbox text-slate-300 text-4xl mb-3"></i>
+                    <p class="text-slate-400 text-sm">Belum ada laporan kerusakan</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Create Report -->
+        <div id="tabContent-create" class="tab-content hidden">
+            <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2 flex items-center space-x-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    <span>Buat Laporan Kerusakan</span>
+                </h2>
+
+                <div id="createSuccess" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm mb-4">
+                    <i class="fa-solid fa-circle-check mr-2"></i>
+                    <span id="successText"></span>
+                </div>
+
+                <form id="reportForm" onsubmit="submitReport(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nama Pelapor / Operator</label>
+                            <input type="text" id="reporterName" required placeholder="Contoh: Budi Santoso"
+                                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Lini Produksi / Area</label>
+                            <select id="lineArea" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="">-- Pilih Area --</option>
+                                <option value="Lini Packaging A">Lini Packaging A</option>
+                                <option value="Lini Packaging B">Lini Packaging B</option>
+                                <option value="Lini Stamping/Press">Lini Stamping / Press</option>
+                                <option value="Lini Assembly 1">Lini Assembly 1</option>
+                                <option value="Lini Assembly 2">Lini Assembly 2</option>
+                                <option value="Area Utility & Genset">Area Utility & Genset</option>
+                                <option value="Area Boiler">Area Boiler</option>
+                                <option value="Area Compressor">Area Compressor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nama Mesin / Kode Aset</label>
+                            <input type="text" id="machineName" required placeholder="Contoh: Mesin Press Komatsu #02"
+                                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tingkat Urgensi</label>
+                            <select id="urgency" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="Rendah">Rendah (Mesin masih jalan)</option>
+                                <option value="Sedang">Sedang (Output melambat)</option>
+                                <option value="Tinggi">Tinggi / Critical (Breakdown Total)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Deskripsi Kerusakan / Gejala</label>
+                        <textarea id="description" rows="4" required placeholder="Jelaskan indikasi kerusakan (misal: bunyi bising, oli bocor, alarm error, getaran berlebihan)..."
+                            class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                    </div>
+
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Kirim Laporan Kerusakan</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB: Users -->
+        <div id="tabContent-users" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4 border-b pb-3">
+                    <h2 class="text-lg font-bold text-slate-800">Kelola User</h2>
+                    <button onclick="openUserModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 transition">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Tambah User</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase border-b">
+                            <tr>
+                                <th class="p-3">Username</th>
+                                <th class="p-3">Nama Lengkap</th>
+                                <th class="p-3">Role</th>
+                                <th class="p-3">Dibuat</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Update Status Maintenance -->
+    <div id="updateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-800 border-b pb-2">Update Status Perbaikan</h3>
+            <input type="hidden" id="modalTicketId">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Status Pekerjaan</label>
+                <select id="modalStatus" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+                    <option value="Open">Open (Menunggu Teknis)</option>
+                    <option value="In Progress">In Progress (Sedang Dikerjakan)</option>
+                    <option value="Closed">Closed (Selesai Perbaikan)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Teknisi Penanggung Jawab</label>
+                <input type="text" id="modalTechnician" placeholder="Nama teknisi..."
+                    class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Tindakan / Solusi Perbaikan</label>
+                <textarea id="modalAction" rows="3" placeholder="Catat tindakan perbaikan atau part yang diganti..."
+                    class="w-full border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300">Batal</button>
+                <button onclick="saveModalUpdate()" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700">Simpan Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add User -->
+    <div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-800 border-b pb-2">Tambah User Baru</h3>
+
+            <div id="userErrorMsg" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                <span id="userErrorText"></span>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Username</label>
+                <input type="text" id="newUsername" required class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Password</label>
+                <input type="password" id="newPassword" required class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Lengkap</label>
+                <input type="text" id="newFullName" required class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Role</label>
+                <select id="newRole" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+                    <option value="operator">Operator</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="supervisor">Supervisor</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeUserModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300">Batal</button>
+                <button onclick="createUser()" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detail Report -->
+    <div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-slate-800">Detail Laporan</h3>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="detailContent" class="text-sm space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 left-4 sm:left-auto sm:w-96 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        let currentUser = null;
+        let chartArea = null, chartUrgency = null, chartMonthly = null;
+        let deferredPrompt = null;
+        let notifPollInterval = null;
+        let lastNotifCount = 0;
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!localStorage.getItem('fixit_install_dismissed')) {
+                document.getElementById('installBanner').classList.remove('hidden');
+            }
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choice) => {
+                    if (choice.outcome === 'accepted') showToast('Aplikasi berhasil di-install!', 'success');
+                    deferredPrompt = null;
+                    document.getElementById('installBanner').classList.add('hidden');
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.add('hidden');
+            localStorage.setItem('fixit_install_dismissed', 'true');
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then((reg) => {
+                console.log('SW registered:', reg.scope);
+            }).catch((err) => console.warn('SW registration failed:', err));
+        }
+
+        // Browser Notification Permission
+        async function requestNotifPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                await Notification.requestPermission();
+            }
+        }
+
+        function showBrowserNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: '/icons/icon-192.png',
+                    badge: '/icons/icon-192.png',
+                    tag: 'fixit-notification',
+                    vibrate: [200, 100, 200]
+                });
+            }
+        }
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                info: 'bg-blue-600', success: 'bg-emerald-600',
+                warning: 'bg-amber-600', error: 'bg-red-600'
+            };
+            const icons = {
+                info: 'fa-circle-info', success: 'fa-circle-check',
+                warning: 'fa-triangle-exclamation', error: 'fa-circle-xmark'
+            };
+            const toast = document.createElement('div');
+            toast.className = `${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-3 text-sm pointer-events-auto transform transition-all duration-300 translate-y-4 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type]}"></i><span class="flex-1">${message}</span><button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('translate-y-4', 'opacity-0'); });
+            setTimeout(() => { toast.classList.add('translate-y-4', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 5000);
+        }
+
+        // Notification Polling
+        async function checkNotifications() {
+            try {
+                const res = await API.fetch('/api/notifications/unread-count');
+                const data = await res.json();
+                const badge = document.getElementById('notifBadge');
+
+                if (data.count > 0) {
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.classList.remove('hidden');
+
+                    if (data.count > lastNotifCount && lastNotifCount >= 0) {
+                        const diff = data.count - lastNotifCount;
+                        showToast(`${diff} notifikasi baru`, 'info');
+                        showBrowserNotification('FixIt - Notifikasi Baru', `Anda memiliki ${data.count} notifikasi belum dibaca`);
+                    }
+                } else {
+                    badge.classList.add('hidden');
+                }
+                lastNotifCount = data.count;
+            } catch (err) { /* silent */ }
+        }
+
+        async function loadNotifPanel() {
+            try {
+                const res = await API.fetch('/api/notifications');
+                const notifs = await res.json();
+                const list = document.getElementById('notifList');
+
+                if (notifs.length === 0) {
+                    list.innerHTML = '<div class="px-4 py-6 text-center text-slate-400 text-xs"><i class="fa-solid fa-bell-slash text-2xl mb-2 block text-slate-300"></i>Belum ada notifikasi</div>';
+                    return;
+                }
+
+                list.innerHTML = notifs.map(n => {
+                    const icon = n.type === 'new_report' ? 'fa-triangle-exclamation text-amber-500' : 'fa-wrench text-blue-500';
+                    const bg = n.is_read ? 'bg-white' : 'bg-blue-50';
+                    return `<div class="px-4 py-3 ${bg} hover:bg-slate-50 cursor-pointer transition" onclick="notifClick(${n.id}, ${n.report_id})">
+                        <div class="flex items-start space-x-3">
+                            <i class="fa-solid ${icon} mt-0.5"></i>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-slate-700 truncate">${n.title}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">${n.message}</p>
+                                <p class="text-[10px] text-slate-400 mt-1">${n.created_at}</p>
+                            </div>
+                            ${!n.is_read ? '<span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></span>' : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) { /* silent */ }
+        }
+
+        function toggleNotifPanel() {
+            const panel = document.getElementById('notifPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) loadNotifPanel();
+        }
+
+        async function markAllRead() {
+            try {
+                await API.fetch('/api/notifications/read', { method: 'PUT' });
+                document.getElementById('notifBadge').classList.add('hidden');
+                lastNotifCount = 0;
+                loadNotifPanel();
+            } catch (err) { /* silent */ }
+        }
+
+        async function notifClick(notifId, reportId) {
+            try {
+                await API.fetch(`/api/notifications/${notifId}/read`, { method: 'PUT' });
+                document.getElementById('notifPanel').classList.add('hidden');
+                switchTab('reports');
+                checkNotifications();
+            } catch (err) { /* silent */ }
+        }
+
+        // Close notif panel on outside click
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('notifPanel');
+            if (!panel.classList.contains('hidden') && !e.target.closest('#notifPanel') && !e.target.closest('[onclick="toggleNotifPanel()"]')) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        const API = {
+            async fetch(url, options = {}) {
+                const token = localStorage.getItem('fixit_token');
+                const res = await fetch(url, {
+                    ...options,
+                    headers: { ...options.headers, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                if (res.status === 401) { logout(); throw new Error('Session expired'); }
+                return res;
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('fixit_token');
+            if (!token) { window.location.href = '/login.html'; return; }
+
+            try {
+                const res = await API.fetch('/api/me');
+                const data = await res.json();
+                currentUser = data.user;
+                setupUI();
+                switchTab('dashboard');
+
+                // Start notification polling
+                await requestNotifPermission();
+                checkNotifications();
+                notifPollInterval = setInterval(checkNotifications, 30000);
+            } catch { window.location.href = '/login.html'; }
+        });
+
+        function setupUI() {
+            document.getElementById('headerUserName').textContent = currentUser.name;
+            document.getElementById('headerUserRole').textContent = currentUser.role;
+            document.getElementById('headerAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+
+            if (currentUser.role === 'operator') {
+                document.getElementById('tabCreate').classList.remove('hidden');
+            }
+            if (currentUser.role === 'supervisor') {
+                document.getElementById('tabUsers').classList.remove('hidden');
+                document.getElementById('tabCreate').classList.remove('hidden');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-teal-600', 'text-teal-700');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+
+            document.getElementById(`tabContent-${tab}`).classList.remove('hidden');
+            const activeBtn = document.querySelector(`[data-tab="${tab}"]`);
+            activeBtn.classList.add('border-teal-600', 'text-teal-700');
+            activeBtn.classList.remove('border-transparent', 'text-slate-500');
+
+            if (tab === 'dashboard') loadDashboard();
+            if (tab === 'reports') loadReports();
+            if (tab === 'users') loadUsers();
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            try {
+                const [statsRes, chartsRes] = await Promise.all([
+                    API.fetch('/api/dashboard/stats'),
+                    API.fetch('/api/dashboard/charts')
+                ]);
+                const stats = await statsRes.json();
+                const charts = await chartsRes.json();
+
+                document.getElementById('statTotal').textContent = stats.total;
+                document.getElementById('statOpen').textContent = stats.open;
+                document.getElementById('statProgress').textContent = stats.inProgress;
+                document.getElementById('statClosed').textContent = stats.closed;
+
+                renderCharts(charts);
+            } catch (err) { console.error('Dashboard error:', err); }
+        }
+
+        function renderCharts(data) {
+            const areaLabels = data.byArea.map(d => d.line_area);
+            const areaValues = data.byArea.map(d => d.count);
+
+            if (chartArea) chartArea.destroy();
+            chartArea = new Chart(document.getElementById('chartArea'), {
+                type: 'bar',
+                data: {
+                    labels: areaLabels,
+                    datasets: [{
+                        label: 'Jumlah Laporan',
+                        data: areaValues,
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            if (chartUrgency) chartUrgency.destroy();
+            chartUrgency = new Chart(document.getElementById('chartUrgency'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.byUrgency.map(d => d.urgency),
+                    datasets: [{
+                        data: data.byUrgency.map(d => d.count),
+                        backgroundColor: ['#94a3b8', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } }
+                }
+            });
+
+            const monthLabels = data.byMonth.map(d => d.month).reverse();
+            const monthValues = data.byMonth.map(d => d.count).reverse();
+
+            if (chartMonthly) chartMonthly.destroy();
+            chartMonthly = new Chart(document.getElementById('chartMonthly'), {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: [{
+                        label: 'Jumlah Laporan',
+                        data: monthValues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // Reports
+        async function loadReports() {
+            const search = document.getElementById('searchInput').value;
+            const status = document.getElementById('filterStatus').value;
+            const urgency = document.getElementById('filterUrgency').value;
+
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            if (status) params.set('status', status);
+            if (urgency) params.set('urgency', urgency);
+
+            const res = await API.fetch(`/api/reports?${params}`);
+            const reports = await res.json();
+
+            const tbody = document.getElementById('ticketTableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            if (reports.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            reports.forEach(r => {
+                const urgencyColor = r.urgency === 'Tinggi' ? 'bg-red-100 text-red-700 font-bold' :
+                    (r.urgency === 'Sedang' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600');
+                const statusColor = r.status === 'Closed' ? 'bg-emerald-100 text-emerald-700' :
+                    (r.status === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
+
+                const canEdit = currentUser.role === 'maintenance' || currentUser.role === 'supervisor';
+                const canDelete = currentUser.role === 'supervisor';
+
+                let actions = `<button onclick="showDetail(${r.id})" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded text-xs transition" title="Detail"><i class="fa-solid fa-eye"></i></button>`;
+                if (canEdit) actions += ` <button onclick="openModal(${r.id})" class="bg-teal-100 hover:bg-teal-200 text-teal-600 p-1.5 rounded text-xs transition" title="Update"><i class="fa-solid fa-pen-to-square"></i></button>`;
+                if (canDelete) actions += ` <button onclick="deleteReport(${r.id})" class="bg-red-100 hover:bg-red-200 text-red-600 p-1.5 rounded text-xs transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>`;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono">
+                        <span class="font-bold text-slate-800">${r.ticket_code}</span>
+                        <div class="text-[10px] text-slate-400">${r.created_at}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-700">${r.machine_name}</div>
+                        <div class="text-[11px] text-slate-400">${r.line_area}</div>
+                    </td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] ${urgencyColor}">${r.urgency}</span></td>
+                    <td class="p-3 max-w-xs truncate" title="${r.description}">${r.description}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${statusColor}">${r.status}</span></td>
+                    <td class="p-3 text-slate-500">${r.technician}</td>
+                    <td class="p-3 text-center space-x-1">${actions}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function submitReport(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengirim...</span>';
+
+            try {
+                const res = await API.fetch('/api/reports', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        reporter_name: document.getElementById('reporterName').value,
+                        line_area: document.getElementById('lineArea').value,
+                        machine_name: document.getElementById('machineName').value,
+                        urgency: document.getElementById('urgency').value,
+                        description: document.getElementById('description').value
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                document.getElementById('reportForm').reset();
+                const successDiv = document.getElementById('createSuccess');
+                const successMsg = `Laporan berhasil dikirim! Kode Tiket: ${data.ticket_code}`;
+                document.getElementById('successText').textContent = successMsg;
+                successDiv.classList.remove('hidden');
+                showToast(successMsg, 'success');
+                setTimeout(() => successDiv.classList.add('hidden'), 5000);
+            } catch (err) {
+                alert('Gagal mengirim laporan: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Kirim Laporan Kerusakan</span>';
+            }
+        }
+
+        async function showDetail(id) {
+            const res = await API.fetch(`/api/reports?search=${id}`);
+            const reports = await res.json();
+            const r = reports.find(x => x.id === id);
+            if (!r) return;
+
+            const urgencyColor = r.urgency === 'Tinggi' ? 'text-red-600' : (r.urgency === 'Sedang' ? 'text-amber-600' : 'text-slate-600');
+            const statusColor = r.status === 'Closed' ? 'text-emerald-600' : (r.status === 'In Progress' ? 'text-amber-600' : 'text-red-600');
+
+            document.getElementById('detailContent').innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Kode Tiket</p><p class="font-bold font-mono">${r.ticket_code}</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Tanggal</p><p class="font-semibold">${r.created_at}</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Pelapor</p><p class="font-semibold">${r.reporter_name}</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Area</p><p class="font-semibold">${r.line_area}</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Mesin</p><p class="font-semibold">${r.machine_name}</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Urgensi</p><p class="font-bold ${urgencyColor}">${r.urgency}</p></div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Deskripsi Kerusakan</p><p class="mt-1">${r.description}</p></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Status</p><p class="font-bold ${statusColor}">${r.status}</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Teknisi</p><p class="font-semibold">${r.technician}</p></div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg"><p class="text-[10px] text-slate-400 uppercase">Tindakan / Solusi</p><p class="mt-1">${r.action_note}</p></div>
+                ${r.updated_at !== r.created_at ? `<p class="text-[10px] text-slate-400 text-right">Terakhir diupdate: ${r.updated_at}</p>` : ''}
+            `;
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
+
+        // Modal Update
+        async function openModal(id) {
+            const res = await API.fetch(`/api/reports?search=`);
+            const reports = await res.json();
+            const r = reports.find(x => x.id === id);
+            if (!r) return;
+
+            document.getElementById('modalTicketId').value = r.id;
+            document.getElementById('modalStatus').value = r.status;
+            document.getElementById('modalTechnician').value = r.technician !== '-' ? r.technician : '';
+            document.getElementById('modalAction').value = r.action_note !== '-' ? r.action_note : '';
+            document.getElementById('updateModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('updateModal').classList.add('hidden'); }
+
+        async function saveModalUpdate() {
+            const id = document.getElementById('modalTicketId').value;
+            try {
+                const res = await API.fetch(`/api/reports/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        status: document.getElementById('modalStatus').value,
+                        technician: document.getElementById('modalTechnician').value || '-',
+                        action_note: document.getElementById('modalAction').value || '-'
+                    })
+                });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                closeModal();
+                loadReports();
+            } catch (err) { alert('Gagal update: ' + err.message); }
+        }
+
+        async function deleteReport(id) {
+            if (!confirm('Yakin ingin menghapus tiket ini?')) return;
+            try {
+                await API.fetch(`/api/reports/${id}`, { method: 'DELETE' });
+                loadReports();
+            } catch (err) { alert('Gagal hapus: ' + err.message); }
+        }
+
+        function exportCSV() { window.open('/api/reports/export', '_blank'); }
+
+        // Users
+        async function loadUsers() {
+            const res = await API.fetch('/api/users');
+            const users = await res.json();
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+
+            const roleColors = { supervisor: 'bg-purple-100 text-purple-700', maintenance: 'bg-blue-100 text-blue-700', operator: 'bg-slate-100 text-slate-600' };
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold">${u.username}</td>
+                    <td class="p-3">${u.name}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${roleColors[u.role] || ''}">${u.role}</span></td>
+                    <td class="p-3 text-slate-400 text-[11px]">${u.created_at}</td>
+                    <td class="p-3 text-center">
+                        ${u.id !== currentUser.id ? `<button onclick="deleteUser(${u.id})" class="bg-red-100 hover:bg-red-200 text-red-600 p-1.5 rounded text-xs transition"><i class="fa-solid fa-trash"></i></button>` : '<span class="text-[10px] text-slate-300">Anda</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
+        function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
+
+        async function createUser() {
+            try {
+                const res = await API.fetch('/api/users', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: document.getElementById('newUsername').value,
+                        password: document.getElementById('newPassword').value,
+                        name: document.getElementById('newFullName').value,
+                        role: document.getElementById('newRole').value
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                closeUserModal();
+                loadUsers();
+            } catch (err) {
+                document.getElementById('userErrorText').textContent = err.message;
+                document.getElementById('userErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Yakin ingin menghapus user ini?')) return;
+            try {
+                await API.fetch(`/api/users/${id}`, { method: 'DELETE' });
+                loadUsers();
+            } catch (err) { alert('Gagal hapus: ' + err.message); }
+        }
+
+        function logout() {
+            if (notifPollInterval) clearInterval(notifPollInterval);
+            localStorage.removeItem('fixit_token');
+            localStorage.removeItem('fixit_user');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>
