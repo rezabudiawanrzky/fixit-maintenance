@@ -2,9 +2,16 @@
 
 > Aplikasi web open source untuk pelaporan dan pelacakan kerusakan mesin di lingkungan manufaktur.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node.js](https://img.shields.io/badge/node-%3E%3D18.0-green.svg)
-![Status](https://img.shields.io/badge/status-active-success.svg)
+<div align="center">
+
+![License](https://img.shields.io/github/license/rezabudiawanrzky/fixit-maintenance?color=blue)
+![Node.js](https://img.shields.io/badge/node-%3E%3D18.0-green?logo=node.js)
+![Status](https://img.shields.io/badge/status-active-success)
+![Issues](https://img.shields.io/github/issues/rezabudiawanrzky/fixit-maintenance)
+![Forks](https://img.shields.io/github/forks/rezabudiawanrzky/fixit-maintenance)
+![Stars](https://img.shields.io/github/stars/rezabudiawanrzky/fixit-maintenance)
+
+</div>
 
 Tatalogam Lestari membantu tim pabrik mengelola laporan kerusakan mesin secara digital — dari pelaporan oleh operator, penugasan teknisi, hingga tracking perbaikan selesai.
 
@@ -171,6 +178,14 @@ Kontribusi sangat diterima! Silakan baca [CONTRIBUTING.md](CONTRIBUTING.md) untu
 ## 📄 Lisensi
 
 Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+
+## 🤝 Komunitas & Dukungan
+
+- 📖 [Dokumentasi](#-cara-menggunakan)
+- 🐛 [Laporkan Bug](https://github.com/rezabudiawanrzky/fixit-maintenance/issues/new?template=bug_report.md)
+- 💡 [Minta Fitur](https://github.com/rezabudiawanrzky/fixit-maintenance/issues/new?template=feature_request.md)
+-  [Diskusi](https://github.com/rezabudiawanrzky/fixit-maintenance/discussions)
+- 📜 [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## 🙏 Acknowledgements
 

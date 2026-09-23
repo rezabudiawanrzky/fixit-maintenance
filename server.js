@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const path = require('path');
-const { initDatabase, queryAll, queryOne, execute } = require('./db');
+const { initDatabase, queryAll, queryOne, execute } = require('./db-sqlite');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
